@@ -1,26 +1,38 @@
 #!/bin/sh
+set -eu
 
-wslpath="/mnt/c/Pictures/xxx.jpg"
-winpath="$(wslpath -w $wslpath)"
+IMAGE_FILE_NAME="Screenshot $(date '+%Y-%m-%d %H%M%S').png"
+WSL_BASE_DIR="/tmp/wsl-screenshot-cli"
+WSL_IMAGE_TMP_PATH="$WSL_BASE_DIR/$IMAGE_FILE_NAME"
 
-powershell.exe -NoLogo -NoProfile -NonInteractive -Command "
-Add-Type -AssemblyName System.Windows.Forms
-Add-Type -AssemblyName System.Drawing
+mkdir -p "$WSL_BASE_DIR"
 
-\$img = [System.Drawing.Image]::FromFile('$winpath')
+WIN_IMAGE_TMP_PATH="$(wslpath -w "$WSL_IMAGE_TMP_PATH")"
 
-\$data = New-Object System.Windows.Forms.DataObject
+PS_CMD="
+Add-Type -AssemblyName System.Windows.Forms,System.Drawing;
 
-# CF_BITMAP (Image)
-\$data.SetImage(\$img)
+\$image = [System.Windows.Forms.Clipboard]::GetImage();
+if (-not \$image) { throw 'No image found in clipboard.' }
 
-# CF_UNICODETEXT (Text)
-\$data.SetText('$wslpath', [System.Windows.Forms.TextDataFormat]::UnicodeText)
+try {
+    \$image.Save('$WIN_IMAGE_TMP_PATH', [System.Drawing.Imaging.ImageFormat]::Png);
 
-# CF_HDROP (FileDropList)
-\$files = New-Object System.Collections.Specialized.StringCollection
-\$files.Add('$winpath')
-\$data.SetFileDropList(\$files)
+    \$data = New-Object System.Windows.Forms.DataObject;
+    \$data.SetImage(\$image);
+    \$data.SetText('$WSL_IMAGE_TMP_PATH', [System.Windows.Forms.TextDataFormat]::UnicodeText);
 
-[System.Windows.Forms.Clipboard]::SetDataObject(\$data, \$true)
+    \$files = New-Object System.Collections.Specialized.StringCollection;
+    [void]\$files.Add('$WIN_IMAGE_TMP_PATH');
+    \$data.SetFileDropList(\$files);
+
+    [System.Windows.Forms.Clipboard]::SetDataObject(\$data, \$true);
+
+    Write-Output 'Saved.';
+}
+finally {
+    \$image.Dispose();
+}
 "
+
+powershell.exe -STA -NoLogo -NoProfile -NonInteractive -Command "$PS_CMD"
