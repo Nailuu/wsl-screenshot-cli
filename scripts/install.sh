@@ -85,10 +85,20 @@ main() {
     version_stripped="${version#v}"
     info "Latest version: ${version}"
 
+    # Skip download if already installed at latest version
+    if command -v "${BINARY}" &>/dev/null; then
+        local installed_version
+        installed_version=$("${BINARY}" --version 2>&1 | awk '{print $NF}')
+        if [ "${installed_version}" = "${version_stripped}" ]; then
+            info "Already up to date (${version})."
+            exit 0
+        fi
+        info "Updating from v${installed_version} to ${version}..."
+    fi
+
     # Archive name matches GoReleaser template
     archive="${BINARY}_${version_stripped}_${os}_${arch}.tar.gz"
 
-    local tmpdir
     tmpdir=$(mktemp -d)
     trap 'rm -rf "$tmpdir"' EXIT
 

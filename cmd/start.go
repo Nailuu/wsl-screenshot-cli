@@ -47,7 +47,7 @@ var startCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(startCmd)
 
-	startCmd.Flags().IntVarP(&interval, "interval", "i", 250, "Clipboard polling interval in ms (100-5000)")
+	startCmd.Flags().IntVarP(&interval, "interval", "i", 500, "Clipboard polling interval in ms (100-5000)")
 	startCmd.Flags().StringVarP(&outputDir, "output", "o", "/tmp/.wsl-screenshot-cli/", "Directory to store PNGs")
 	startCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Log all PowerShell I/O for debugging")
 	startCmd.Flags().BoolVarP(&daemonize, "daemon", "d", false, "Run as a background daemon")

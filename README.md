@@ -4,12 +4,15 @@ CLI tool that monitors the Windows clipboard for screenshots, making them pastea
 
 Take a screenshot on Windows, then paste in your WSL terminal — you get a file path. Paste in Paint — you get the image. Paste in Explorer — you get the file. All at the same time.
 
+![Demo](assets/demo.gif)
+
 ### Quick Start
 
 ```bash
 wsl-screenshot-cli start --daemon   # start monitoring
 wsl-screenshot-cli status           # check it's running
 wsl-screenshot-cli stop             # stop monitoring
+wsl-screenshot-cli update           # update to latest version
 ```
 
 ## Installation
@@ -62,7 +65,7 @@ graph LR
     end
 
     CLI -- "start / stop / status" --> Poller
-    Poller -- "poll every 250ms" --> GoClient
+    Poller -- "poll every 500ms" --> GoClient
     GoClient -- "stdin / stdout" --> PS
     PS -- "Win32 + .NET" --> CB
     Poller -- "save & dedup" --> PNG
@@ -99,7 +102,7 @@ wsl-screenshot-cli start
 wsl-screenshot-cli start --daemon
 
 # Custom interval and output directory
-wsl-screenshot-cli start --daemon --interval 500 --output ~/screenshots/
+wsl-screenshot-cli start --daemon --interval 1000 --output ~/screenshots/
 
 # Debug mode — logs all PowerShell I/O
 wsl-screenshot-cli start --verbose
@@ -108,7 +111,7 @@ wsl-screenshot-cli start --verbose
 | Flag | Short | Default | Description |
 |---|---|---|---|
 | `--daemon` | `-d` | `false` | Run as a background daemon |
-| `--interval` | `-i` | `250` | Polling interval in ms (100–5000) |
+| `--interval` | `-i` | `500` | Polling interval in ms (100–5000) |
 | `--output` | `-o` | `/tmp/.wsl-screenshot-cli/` | Directory to store PNGs |
 | `--verbose` | `-v` | `false` | Log all PowerShell I/O for debugging |
 
@@ -131,6 +134,14 @@ Log file:     /tmp/.wsl-screenshot-cli.log
 ```bash
 wsl-screenshot-cli stop
 ```
+
+### Update
+
+```bash
+wsl-screenshot-cli update
+```
+
+Updates to the latest release from GitHub. If the daemon is running, it will be stopped before updating. Re-running the install script when already on the latest version will skip the download.
 
 ## Prerequisites
 
@@ -170,7 +181,8 @@ go test -count=1 -v ./...
 │   ├── root.go                    # Root cobra command
 │   ├── start.go                   # start command (flags, daemon/foreground)
 │   ├── status.go                  # status command (process diagnostics)
-│   └── stop.go                    # stop command (SIGTERM)
+│   ├── stop.go                    # stop command (SIGTERM)
+│   └── update.go                  # update command (self-update via install script)
 └── internal/
     ├── clipboard/
     │   ├── clipboard.go           # Go ↔ PowerShell client (stdin/stdout pipes)
