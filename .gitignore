@@ -1,0 +1,12 @@
+# Binary
+wsl-screenshot-cli
+
+# Test
+*.test
+coverage.out
+coverage.html
+
+# IDE
+.idea/
+.vscode/
+*.swp

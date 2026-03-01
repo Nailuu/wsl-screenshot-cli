@@ -8,7 +8,8 @@ import (
 const wslErrorMessage = "This CLI is meant to be run only inside a WSL instance with access to powershell.exe"
 
 // CheckWSLEnvironment verifies we're running inside WSL and that powershell.exe is accessible.
-func CheckWSLEnvironment() error {
+// Declared as a var so tests can override it without needing real WSL binaries.
+var CheckWSLEnvironment = func() error {
 	// Check 1: verify we're inside WSL
 	if err := exec.Command("wslinfo", "--version").Run(); err != nil {
 		return fmt.Errorf("%s", wslErrorMessage)

@@ -10,23 +10,23 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "wsl-screenshot-cli",
-	Short: "Monitor the Windows clipboard for screenshots and make them pasteable in WSL",
-	Long: `wsl-screenshot-cli monitors the Windows clipboard for screenshots and converts
-them into PNG files that can be pasted in both WSL and Windows applications.
+	Short: "Monitor the Windows clipboard for screenshots, making them pasteable in WSL while preserving Windows paste functionality",
+	Long: `wsl-screenshot-cli monitors the Windows clipboard for screenshots, making
+them pasteable in WSL (e.g. Claude Code CLI, Codex CLI, ...) while preserving
+Windows paste functionality.
 
-How it works:
-  The tool polls the clipboard at a configurable interval. When a new bitmap
-  is detected (via hash deduplication), it converts the image to PNG and
-  stores it locally.
+A persistent powershell.exe -STA subprocess handles all clipboard access
+via a stdin/stdout text protocol. It polls at a configurable interval,
+using GetClipboardSequenceNumber() to skip reads when nothing has changed.
+When a new bitmap is detected, it saves the PNG (deduplicated by SHA256
+hash) and sets three clipboard formats at once:
 
-It then sets three clipboard formats:
   CF_UNICODETEXT  — WSL path to the PNG, so you can paste in WSL terminals
-  CF_BITMAP       — the PNG image data, so image paste still works
-  CF_HDROP        — Windows UNC path (\\wsl.localhost\...) as a file drop,
-                    so you can paste the file in Windows apps like Explorer
+  CF_BITMAP       — the original image data, preserving normal image paste
+  CF_HDROP        — Windows UNC path as a file drop, preserving paste-as-file
 
-After a screenshot, you can paste the file path in a WSL terminal or paste
-the file directly into Windows applications.`,
+After a screenshot, you can paste the file path in a WSL terminal and still
+paste normally in Windows applications.`,
 }
 
 // ExecuteContext adds all child commands to the root command and sets flags appropriately.

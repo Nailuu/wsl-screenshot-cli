@@ -1,4 +1,4 @@
-module nailu/wsl-screenshot-cli
+module github.com/nailuu/wsl-screenshot-cli
 
 go 1.25.0
 
