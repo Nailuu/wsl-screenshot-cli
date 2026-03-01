@@ -7,9 +7,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// rootCmd represents the base command when called without any subcommands
+// version is set at build time by GoReleaser via ldflags.
+var version = "dev"
+
 var rootCmd = &cobra.Command{
-	Use:   "wsl-screenshot-cli",
+	Use:     "wsl-screenshot-cli",
+	Version: version,
 	Short: "Monitor the Windows clipboard for screenshots, making them pasteable in WSL while preserving Windows paste functionality",
 	Long: `wsl-screenshot-cli monitors the Windows clipboard for screenshots, making
 them pasteable in WSL (e.g. Claude Code CLI, Codex CLI, ...) while preserving

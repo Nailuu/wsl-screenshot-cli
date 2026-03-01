@@ -6,6 +6,9 @@ wsl-screenshot-cli
 coverage.out
 coverage.html
 
+# GoReleaser
+dist/
+
 # IDE
 .idea/
 .vscode/

@@ -14,14 +14,24 @@ wsl-screenshot-cli stop             # stop monitoring
 
 ## Installation
 
+### Quick install (recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Nailuu/wsl-screenshot-cli/main/scripts/install.sh | bash
+```
+
+This downloads the latest binary to `~/.local/bin/`. No Go toolchain required.
+
+### Via Go
+
 ```bash
 go install github.com/nailuu/wsl-screenshot-cli@latest
 ```
 
-Or build from source:
+### From source
 
 ```bash
-git clone https://github.com/nailuu/wsl-screenshot-cli.git
+git clone https://github.com/Nailuu/wsl-screenshot-cli.git
 cd wsl-screenshot-cli
 go build -o wsl-screenshot-cli .
 ```
@@ -125,8 +135,8 @@ wsl-screenshot-cli stop
 ## Prerequisites
 
 - **WSL2** with Windows interop enabled
-- **Go 1.25+** (for building from source)
 - **PowerShell** accessible from WSL (`powershell.exe` must be in PATH)
+- **Go 1.25+** (only if building from source)
 
 ## Tests
 
