@@ -12,6 +12,7 @@ import (
 	"github.com/nailuu/wsl-screenshot-cli/internal/daemon"
 	"github.com/nailuu/wsl-screenshot-cli/internal/platform"
 	"github.com/nailuu/wsl-screenshot-cli/internal/poller"
+	versioncheck "github.com/nailuu/wsl-screenshot-cli/internal/version"
 )
 
 var interval int
@@ -24,6 +25,10 @@ var startCmd = &cobra.Command{
 	Short: "Start the clipboard polling process",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if latest, err := versioncheck.CheckForUpdate(version); err == nil && latest != "" {
+			fmt.Fprintf(cmd.OutOrStdout(), "\nNew update available (v%s), run `wsl-screenshot-cli update` to install it.\n\n", latest)
+		}
+
 		if interval < 100 || interval > 5000 {
 			return fmt.Errorf("Interval must be between 100 and 5000 ms (got %d)", interval)
 		}
