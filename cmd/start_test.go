@@ -7,7 +7,7 @@ import (
 	"github.com/nailuu/wsl-screenshot-cli/internal/platform"
 )
 
-func TestStart_DaemonFailsOnWSLCheckError(t *testing.T) {
+func TestStart_FailsOnWSLCheckError(t *testing.T) {
 	origCheck := platform.CheckWSLEnvironment
 	defer func() { platform.CheckWSLEnvironment = origCheck }()
 
@@ -26,6 +26,32 @@ func TestStart_DaemonFailsOnWSLCheckError(t *testing.T) {
 	}
 	if err.Error() != wslErr.Error() {
 		t.Errorf("expected WSL error %q, got %q", wslErr, err)
+	}
+}
+
+func TestStart_FailsOnInteropCheckError(t *testing.T) {
+	origWSL := platform.CheckWSLEnvironment
+	origInterop := platform.CheckWSLInterop
+	defer func() {
+		platform.CheckWSLEnvironment = origWSL
+		platform.CheckWSLInterop = origInterop
+	}()
+
+	platform.CheckWSLEnvironment = func() error { return nil }
+	interopErr := fmt.Errorf("WSL interop is disabled")
+	platform.CheckWSLInterop = func() error { return interopErr }
+
+	interval = 250
+	outputDir = t.TempDir()
+	daemonize = false
+	verbose = false
+
+	err := startCmd.RunE(startCmd, nil)
+	if err == nil {
+		t.Fatal("expected error from interop check, got nil")
+	}
+	if err.Error() != interopErr.Error() {
+		t.Errorf("expected interop error %q, got %q", interopErr, err)
 	}
 }
 

@@ -32,15 +32,23 @@ var startCmd = &cobra.Command{
 		if interval < 100 || interval > 5000 {
 			return fmt.Errorf("Interval must be between 100 and 5000 ms (got %d)", interval)
 		}
+
 		if err := os.MkdirAll(outputDir, 0755); err != nil {
 			return fmt.Errorf("Output directory is not writable: %w", err)
 		}
+
+		if err := platform.CheckWSLEnvironment(); err != nil {
+			return err
+		}
+
+		if err := platform.CheckWSLInterop(); err != nil {
+			return err
+		}
+
 		if daemonize {
-			if err := platform.CheckWSLEnvironment(); err != nil {
-				return err
-			}
 			return daemon.Daemonize(interval, outputDir, verbose)
 		}
+
 		return daemon.Run(cmd.Context(), interval, outputDir, func(ctx context.Context, logger *log.Logger) error {
 			return poller.Run(ctx, logger, interval, outputDir, func() (poller.Clipboard, error) {
 				return clipboard.NewClient(logger, verbose)
