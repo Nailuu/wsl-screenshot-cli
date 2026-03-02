@@ -47,6 +47,13 @@ go build -o wsl-screenshot-cli .
 wsl-screenshot-cli start --daemon
 ```
 
+> **Note:** The install script places the binary in `~/.local/bin/`, which is typically added to PATH by `~/.profile` (login shells only). If you get `command not found` in `.bashrc`, add this **before** the line above:
+> ```bash
+> if [ -d "$HOME/.local/bin" ] && [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+>     export PATH="$HOME/.local/bin:$PATH"
+> fi
+> ```
+
 **Option 2** — Auto-start/stop with Claude Code hooks (add to `~/.claude/settings.json`):
 
 ```json
