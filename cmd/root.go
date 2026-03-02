@@ -19,9 +19,10 @@ them pasteable in WSL (e.g. Claude Code CLI, Codex CLI, ...) while preserving
 Windows paste functionality.
 
 A persistent powershell.exe -STA subprocess handles all clipboard access
-via a stdin/stdout text protocol. It polls at a configurable interval,
-using GetClipboardSequenceNumber() to skip reads when nothing has changed.
-When a new bitmap is detected, it saves the PNG (deduplicated by SHA256
+via a stdin/stdout text protocol (CHECK / UPDATE / EXIT). PowerShell registers
+an AddClipboardFormatListener window to receive WM_CLIPBOARDUPDATE events
+instead of polling, and pumps Windows messages via DoEvents() to keep the
+STA thread responsive. When a new bitmap is detected, it saves the PNG (deduplicated by SHA256
 hash) and sets three clipboard formats at once:
 
   CF_UNICODETEXT  — WSL path to the PNG, so you can paste in WSL terminals
