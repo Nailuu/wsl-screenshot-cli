@@ -78,15 +78,19 @@ func poll(client Clipboard, logger *log.Logger, outputDir string) error {
 	filename := hash + ".png"
 	filePath := filepath.Join(outputDir, filename)
 
-	// Dedup: if the file already exists, this image was already captured
-	if _, err := os.Stat(filePath); err == nil {
-		return nil
+	// Only write if file doesn't already exist (content-addressable dedup).
+	// We intentionally do NOT return early when the file exists because actions
+	// like Snipping Tool's Copy button or Undo button overwrite the clipboard
+	// with just CF_BITMAP, stripping our 3-format fingerprint (CF_BITMAP +
+	// CF_UNICODETEXT + CF_HDROP). The SHA256 match tells us the image is already
+	// saved locally, so we skip the write but still fall through to
+	// UpdateClipboard below to restore the useful text-path and file-drop formats.
+	if _, err := os.Stat(filePath); err != nil {
+		if err := os.WriteFile(filePath, pngData, 0644); err != nil {
+			return fmt.Errorf("write %s: %w", filename, err)
+		}
+		logger.Printf("New screenshot saved: %s (%d bytes)", filename, len(pngData))
 	}
-
-	if err := os.WriteFile(filePath, pngData, 0644); err != nil {
-		return fmt.Errorf("write %s: %w", filename, err)
-	}
-	logger.Printf("New screenshot saved: %s (%d bytes)", filename, len(pngData))
 
 	winPath, err := wslToWinPath(filePath)
 	if err != nil {

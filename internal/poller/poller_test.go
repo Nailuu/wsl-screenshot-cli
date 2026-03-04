@@ -155,8 +155,8 @@ func TestPoll_Dedup(t *testing.T) {
 		t.Fatalf("second poll: %v", err)
 	}
 
-	if updateCount != 1 {
-		t.Errorf("UpdateClipboard called %d times, want 1 (dedup)", updateCount)
+	if updateCount != 2 {
+		t.Errorf("UpdateClipboard called %d times, want 2 (always restore clipboard formats)", updateCount)
 	}
 }
 
