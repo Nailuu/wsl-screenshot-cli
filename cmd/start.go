@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"os"
 
@@ -19,12 +20,17 @@ var interval int
 var outputDir string
 var daemonize bool
 var verbose bool
+var quiet bool
 
 var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start the clipboard polling process",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if quiet {
+			daemon.Output = io.Discard
+		}
+
 		if latest, err := versioncheck.CheckForUpdate(version); err == nil && latest != "" {
 			fmt.Fprintf(cmd.OutOrStdout(), "\nNew update available (v%s), run `wsl-screenshot-cli update` to install it.\n\n", latest)
 		}
@@ -64,4 +70,5 @@ func init() {
 	startCmd.Flags().StringVarP(&outputDir, "output", "o", "/tmp/.wsl-screenshot-cli/", "Directory to store PNGs")
 	startCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Log all PowerShell I/O for debugging")
 	startCmd.Flags().BoolVarP(&daemonize, "daemon", "d", false, "Run as a background daemon")
+	startCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Suppress informational messages")
 }
