@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 const wslErrorMessage = "This CLI is meant to be run only inside a WSL instance with access to powershell.exe"
@@ -11,12 +12,20 @@ const wslErrorMessage = "This CLI is meant to be run only inside a WSL instance 
 // CheckWSLEnvironment verifies we're running inside WSL and that powershell.exe is accessible.
 // Declared as a var so tests can override it without needing real WSL binaries.
 var CheckWSLEnvironment = func() error {
-	if err := exec.Command("wslinfo", "--wsl-version").Run(); err != nil {
-		if err := exec.Command("wslinfo", "--version").Run(); err != nil {
-			return fmt.Errorf("%s", wslErrorMessage)
+	// Try wslinfo with known flags first
+	if err := exec.Command("wslinfo", "--wsl-version").Run(); err == nil {
+		return nil
+	}
+	if err := exec.Command("wslinfo", "--version").Run(); err == nil {
+		return nil
+	}
+	// Fallback: look for "WSL2" in /proc/version
+	if data, err := os.ReadFile("/proc/version"); err == nil {
+		if strings.Contains(strings.ToUpper(string(data)), "WSL2") {
+			return nil
 		}
 	}
-	return nil
+	return fmt.Errorf("%s", wslErrorMessage)
 }
 
 // CheckWSLInterop verifies that WSL interop is enabled by checking the WSL_INTEROP environment variable.
