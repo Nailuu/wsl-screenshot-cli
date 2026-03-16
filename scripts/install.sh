@@ -36,10 +36,19 @@ detect_arch() {
 }
 
 detect_os() {
-    if ! grep -qi "microsoft" /proc/version 2>/dev/null; then
-        error "WSL2 not detected. This tool only runs inside WSL2."
+    # 1. Try wslinfo (preferred, works on modern WSL2)
+    if command -v wslinfo &>/dev/null; then
+        if wslinfo --wsl-version &>/dev/null || wslinfo --version &>/dev/null; then
+            echo "linux"
+            return
+        fi
     fi
-    echo "linux"
+    # 2. Fallback: check /proc/version for WSL indicators
+    if grep -qiE "wsl|microsoft" /proc/version 2>/dev/null; then
+        echo "linux"
+        return
+    fi
+    error "WSL2 not detected. This tool only runs inside WSL2."
 }
 
 get_latest_version() {
