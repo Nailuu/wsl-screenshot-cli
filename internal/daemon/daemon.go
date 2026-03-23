@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -44,19 +45,19 @@ func RunningPID() int {
 
 	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
 	if err != nil {
-		os.Remove(PidFile)
+		_ = os.Remove(PidFile) // best-effort cleanup
 		return 0
 	}
 
 	proc, err := os.FindProcess(pid)
 	if err != nil {
-		os.Remove(PidFile)
+		_ = os.Remove(PidFile) // best-effort cleanup
 		return 0
 	}
 
 	// Signal 0 checks if the process is alive without actually sending a signal
 	if err := proc.Signal(syscall.Signal(0)); err != nil {
-		os.Remove(PidFile) // stale PID file (e.g. after WSL restart), clean up
+		_ = os.Remove(PidFile) // stale PID file (e.g. after WSL restart), clean up
 		return 0
 	}
 
@@ -71,6 +72,7 @@ var newDaemonCmd = func(interval int, outputDir string, verbose bool) (*exec.Cmd
 		return nil, fmt.Errorf("Failed to get executable path: %w", err)
 	}
 
+	outputDir = filepath.Clean(outputDir)
 	args := []string{"start",
 		"--interval", strconv.Itoa(interval),
 		"--output", outputDir,
@@ -79,7 +81,7 @@ var newDaemonCmd = func(interval int, outputDir string, verbose bool) (*exec.Cmd
 		args = append(args, "--verbose")
 	}
 
-	cmd := exec.Command(exe, args...)
+	cmd := exec.Command(exe, args...) // #nosec G204 -- exe from os.Executable(), args are argv-separated (no shell)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 	return cmd, nil
 }
@@ -96,7 +98,7 @@ func Daemonize(interval int, outputDir string, verbose bool) error {
 		return err
 	}
 
-	logF, err := os.OpenFile(LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	logF, err := os.OpenFile(LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 	if err != nil {
 		return fmt.Errorf("Failed to open log file: %w", err)
 	}
@@ -104,10 +106,10 @@ func Daemonize(interval int, outputDir string, verbose bool) error {
 	child.Stderr = logF
 
 	if err := child.Start(); err != nil {
-		logF.Close()
+		_ = logF.Close()
 		return fmt.Errorf("Failed to start daemon: %w", err)
 	}
-	logF.Close()
+	_ = logF.Close()
 
 	fmt.Fprintf(Output, "Polling process started (PID %d). Run 'wsl-screenshot-cli status' to check status.\n", child.Process.Pid)
 	return nil
@@ -120,12 +122,12 @@ func Run(ctx context.Context, interval int, outputDir string, pollFn func(ctx co
 		return nil
 	}
 
-	if err := os.WriteFile(PidFile, []byte(strconv.Itoa(os.Getpid())), 0644); err != nil {
+	if err := os.WriteFile(PidFile, []byte(strconv.Itoa(os.Getpid())), 0600); err != nil {
 		return fmt.Errorf("Failed to write PID file: %w", err)
 	}
 	defer os.Remove(PidFile)
 
-	if err := os.WriteFile(StateFile, []byte(outputDir), 0644); err != nil {
+	if err := os.WriteFile(StateFile, []byte(outputDir), 0600); err != nil {
 		return fmt.Errorf("Failed to write state file: %w", err)
 	}
 	defer os.Remove(StateFile)
@@ -145,24 +147,24 @@ func Stop() {
 
 	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
 	if err != nil {
-		os.Remove(PidFile)
+		_ = os.Remove(PidFile) // best-effort cleanup
 		fmt.Fprintln(Output, "Polling process is not running. Cleaned up corrupt PID file.")
 		return
 	}
 
 	proc, err := os.FindProcess(pid)
 	if err != nil {
-		os.Remove(PidFile)
+		_ = os.Remove(PidFile) // best-effort cleanup
 		fmt.Fprintln(Output, "Polling process is not running. Cleaned up stale PID file.")
 		return
 	}
 
 	if err := proc.Signal(syscall.SIGTERM); err != nil {
-		os.Remove(PidFile)
+		_ = os.Remove(PidFile) // best-effort cleanup
 		fmt.Fprintf(Output, "Polling process was not running (PID %d). Cleaned up stale PID file.\n", pid)
 		return
 	}
 
-	os.Remove(PidFile)
+	_ = os.Remove(PidFile) // best-effort cleanup
 	fmt.Fprintf(Output, "Polling process stopped successfully (PID %d)\n", pid)
 }

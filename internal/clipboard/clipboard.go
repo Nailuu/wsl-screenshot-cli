@@ -33,7 +33,7 @@ type Client struct {
 // newPSCommand creates the exec.Cmd for the PowerShell subprocess.
 // Declared as a var so tests can override it with a fake process.
 var newPSCommand = func() *exec.Cmd {
-	return exec.Command("powershell.exe",
+	return exec.Command("powershell.exe", // #nosec G204 -- psScript is a compile-time embed constant
 		"-STA", "-NoLogo", "-NoProfile", "-NonInteractive",
 		"-Command", psScript,
 	)
@@ -51,12 +51,12 @@ func NewClient(logger *log.Logger, verbose bool) (*Client, error) {
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		stdin.Close()
+		_ = stdin.Close()
 		return nil, fmt.Errorf("stdout pipe: %w", err)
 	}
 
 	if err := cmd.Start(); err != nil {
-		stdin.Close()
+		_ = stdin.Close()
 		return nil, fmt.Errorf("start powershell: %w", err)
 	}
 
@@ -66,16 +66,16 @@ func NewClient(logger *log.Logger, verbose bool) (*Client, error) {
 
 	// Wait for READY signal
 	if !scanner.Scan() {
-		cmd.Process.Kill()
-		cmd.Wait()
+		_ = cmd.Process.Kill()
+		_ = cmd.Wait()
 		if err := scanner.Err(); err != nil {
 			return nil, fmt.Errorf("waiting for READY: %w", err)
 		}
 		return nil, fmt.Errorf("powershell exited before READY")
 	}
 	if line := strings.TrimSpace(scanner.Text()); line != "READY" {
-		cmd.Process.Kill()
-		cmd.Wait()
+		_ = cmd.Process.Kill()
+		_ = cmd.Wait()
 		return nil, fmt.Errorf("expected READY, got %q", line)
 	}
 
@@ -192,6 +192,6 @@ func (c *Client) Close() error {
 		c.logger.Println("[ps:send] EXIT")
 	}
 	fmt.Fprintln(c.stdin, "EXIT")
-	c.stdin.Close()
+	_ = c.stdin.Close()
 	return c.cmd.Wait()
 }

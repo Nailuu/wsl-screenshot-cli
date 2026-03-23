@@ -39,7 +39,7 @@ var startCmd = &cobra.Command{
 			return fmt.Errorf("Interval must be between 100 and 5000 ms (got %d)", interval)
 		}
 
-		if err := os.MkdirAll(outputDir, 0755); err != nil {
+		if err := os.MkdirAll(outputDir, 0750); err != nil {
 			return fmt.Errorf("Output directory is not writable: %w", err)
 		}
 

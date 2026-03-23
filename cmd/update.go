@@ -27,7 +27,7 @@ var updateCmd = &cobra.Command{
 			daemon.Stop()
 		}
 
-		sh := exec.Command("bash", "-c", fmt.Sprintf("curl -fsSL %s | bash", installScriptURL))
+		sh := exec.Command("bash", "-c", fmt.Sprintf("curl -fsSL %s | bash", installScriptURL)) // #nosec G204 -- installScriptURL is a hardcoded constant
 		sh.Stdout = os.Stdout
 		sh.Stderr = os.Stderr
 		if err := sh.Run(); err != nil {

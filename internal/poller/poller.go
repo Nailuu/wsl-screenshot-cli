@@ -30,7 +30,7 @@ func Run(ctx context.Context, logger *log.Logger, interval int, outputDir string
 	if err != nil {
 		return fmt.Errorf("start clipboard client: %w", err)
 	}
-	defer func() { client.Close() }()
+	defer func() { _ = client.Close() }()
 
 	ticker := time.NewTicker(time.Duration(interval) * time.Millisecond)
 	defer ticker.Stop()
@@ -49,7 +49,7 @@ func Run(ctx context.Context, logger *log.Logger, interval int, outputDir string
 
 				if consecutiveErrors >= maxConsecutiveErrors {
 					logger.Println("Too many consecutive errors, restarting PowerShell client...")
-					client.Close()
+					_ = client.Close()
 
 					client, err = newClient()
 					if err != nil {
@@ -86,7 +86,7 @@ func poll(client Clipboard, logger *log.Logger, outputDir string) error {
 	// saved locally, so we skip the write but still fall through to
 	// UpdateClipboard below to restore the useful text-path and file-drop formats.
 	if _, err := os.Stat(filePath); err != nil {
-		if err := os.WriteFile(filePath, pngData, 0644); err != nil {
+		if err := os.WriteFile(filePath, pngData, 0644); err != nil { // #nosec G306 -- screenshots must be readable by Windows apps via WSL interop
 			return fmt.Errorf("write %s: %w", filename, err)
 		}
 		logger.Printf("New screenshot saved: %s (%d bytes)", filename, len(pngData))
@@ -116,7 +116,7 @@ func hashBytes(data []byte) string {
 // wslToWinPath converts a WSL path to a Windows path using wslpath -w.
 // Declared as a var so tests can override it without needing the wslpath binary.
 var wslToWinPath = func(wslPath string) (string, error) {
-	out, err := exec.Command("wslpath", "-w", wslPath).Output()
+	out, err := exec.Command("wslpath", "-w", wslPath).Output() // #nosec G204 -- wslPath is cleaned by filepath.Join, argv-separated (no shell)
 	if err != nil {
 		return "", fmt.Errorf("wslpath -w %q: %w", wslPath, err)
 	}
