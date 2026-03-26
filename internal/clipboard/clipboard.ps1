@@ -38,6 +38,22 @@ while ($true) {
                 continue
             }
 
+            # Skip clipboard from spreadsheet apps (Excel, Google Sheets, etc.)
+            # These apps copy cells as images but also include data formats like
+            # CSV, HTML, or XML Spreadsheet that pure screenshots never have.
+            $dataObj = [System.Windows.Forms.Clipboard]::GetDataObject()
+            if ($dataObj -ne $null) {
+                $formats = $dataObj.GetFormats()
+                if ($formats -contains "XML Spreadsheet" -or
+                    $formats -contains "Csv" -or
+                    ($formats -contains "HTML Format" -and [System.Windows.Forms.Clipboard]::ContainsText())) {
+                    [Console]::Out.WriteLine("NONE")
+                    [Console]::Out.Flush()
+                    $readTask = [Console]::In.ReadLineAsync()
+                    continue
+                }
+            }
+
             # Fingerprint: if clipboard has image + text + file drop, it still
             # holds our previous enriched write (SetImage + SetText + SetFileDropList).
             # Snipping Tool / Win+Shift+S only sets the image format, so the
